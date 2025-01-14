@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Run tests
+        run: |
+          chmod +x main.sh
+          ./scripts/run_tests.sh  # You'll need to create this
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Get version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Calculate SHA
+        id: shasum
+        run: |
+          TARBALL_URL="https://github.com/${{ github.repository }}/archive/refs/tags/${{ steps.get_version.outputs.VERSION }}.tar.gz"
+          curl -L $TARBALL_URL | shasum -a 256 | cut -d ' ' -f 1 > sha256.txt
+          echo "SHA=$(cat sha256.txt)" >> $GITHUB_OUTPUT
+
+  update-formula:
+    needs: [test, release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tap repository
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ github.repository_owner }}/homebrew-cowcow
+          token: ${{ secrets.TAP_REPO_TOKEN }}
+          
+      - name: Update Formula
+        env:
+          VERSION: ${{ needs.release.outputs.version }}
+          SHA: ${{ needs.release.outputs.sha }}
+        run: |
+          sed -i "s|url.*|url \"https://github.com/${{ github.repository }}/archive/refs/tags/${VERSION}.tar.gz\"|" Formula/cowcow.rb
+          sed -i "s|sha256.*|sha256 \"${SHA}\"|" Formula/cowcow.rb
+          
+      - name: Commit and push changes
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add Formula/cowcow.rb
+          git commit -m "Update formula to version ${VERSION}"
+          git push 

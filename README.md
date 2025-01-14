@@ -1,2 +1,2 @@
 # cowcow
-A CLI package for useful development scripts
+A CLI package for bash management and configuration

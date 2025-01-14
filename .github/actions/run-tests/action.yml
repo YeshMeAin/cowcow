@@ -1,0 +1,11 @@
+name: 'Run Tests'
+description: 'Runs tests for the cowcow project'
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run tests
+      shell: bash
+      run: ./tests/run_all.sh
