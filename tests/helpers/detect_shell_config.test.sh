@@ -1,0 +1,3 @@
+source helpers/detect_shell_config.sh
+
+detect_shell_config

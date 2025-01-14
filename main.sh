@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 #
 # cowcow
-# A utility to pull Bash config (functions and aliases) from a remote repo
-#
+# A utility to pull Bash config (functions, aliases and dependencies) from a remote repo
 
 set -e
 
 source helpers/init_cowcow.sh
 source helpers/update_cowcow.sh
-source helpers/list_aliases.sh
 source helpers/list_functions.sh
 source helpers/help.sh
 # --------------------------------------------------
@@ -21,13 +19,10 @@ case "$1" in
   update)
     update_cowcow "$2"
     ;;
-  aliases)
-    list_aliases
-    ;;
   functions)
     list_functions
     ;;
   *)
-    help
+    help 
     ;;
 esac
